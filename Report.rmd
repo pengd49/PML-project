@@ -1,0 +1,34 @@
+---
+title: "Report"
+author: Pipeweed
+output: html_document
+---
+## Overview
+For this project I first performed some simple variable selection and then experimented with two prediction methods, namely the GLM model and the random forest. The former gave reasonably good prediction accuracy with rather fast training, while the latter took longer to train but shows excellent results (on both the validation set and the test set in the programming part of the project).
+
+## Variable Selection
+
+For the selection part, I began with some understanding about the data. Since the data was collected under supervision of exercise experts and the purpose is to classify the correctness of the exercise, I believe fields such as "user_name" and timestampes hold little value. The meanings of "new_window" and "num_window" were unclear to me, but the former has the same value for an overwhelmingly majority of its components, while the latter seems to have a strong correlation with the "user_name" variable which is already excluded. Hence these two are also discarded. 
+
+The second step of variable selection began with an inspection of NULL elements. Going through the data I discovered two things: 1) a significant number of columns contain NULL elements; 2) all these columns contain exactly the same number of NULLs, and the NULL values also form the major part of these columns (NULL to non-NULL ratio at the order of 100:1). Hence these columns are all removed. 
+
+After the above two steps, I was left with 52 predictor variables (excluding the "classe" values). These are the data I used in the training and prediction steps.
+
+## GLM Model
+
+The first approach I tried was the generalized linear model (GLM). Since the problem is one of a multiclass classification, I cast it into a series of binary ones by classifying "A vs others", "B vs others" and so on. An alternative, which would arguably be better, is to directly do a multiclass version using, for example, LDA, but I am less familiar with that technique and its implementation in R, so I stayed with the GLM method.
+
+With the predictor variables selected as previously described, I use the following for model training:
+  
+**train(classe~.,data=training,method="glm",preProcess=c("center","scale"))**
+  
+The procedure is repeated five times for each of the possible class resulting in five models. Each model is then applied to every sample in the validation set (25% of the original training data) to produce a probability of being in the corresponding class, and the prediction with the highest probability is chosen as the classification for that sample.
+
+I repeated the above procedure ten times (via ten different training data partitions into training sets and validation sets). The average classification accuracy on the validation set is around 75%, which is reasonably good. Assuming the testing data is gathered in the same way as the original data, I expect the generalization error to be close to this number. I could have tuned the GLM approach further, but I decided to try the decision tree/random forest method before that.
+
+## Random Forest
+
+I started with the regression tree model ("rpart") but didn't get good performance, so I decided to introduce bagging which led me to use a random forest model. In this case I didn't do any preprocessing and fed the 52 variables to the model.
+
+Similar to the GLM case I partition the training data into a training and a validation set with 3:1 size ratios. The process is repeated five times to obtain an average estimation on the accuracy. In each run the training process took significantly longer compared to the GLM case (~30 minutes compared to ~3 minutes), but the resulting model is much more accurate, achieving accuracy around 99%. Again, I would expect a similar generalization accuracy on a testing set assuming similar data gathering procedures were followed.
+
